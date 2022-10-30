@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Files API</title>
+  <script type="module" src="index.js" defer></script>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+  <link rel="icon" href="https://i.pinimg.com/736x/46/e8/08/46e80840b080b6d0218127a23ce19d61.jpg" type="image/jpg">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+        <img src="https://i.pinimg.com/736x/46/e8/08/46e80840b080b6d0218127a23ce19d61.jpg" width="5%">
+        Files API
+      </a>
+      <div class="d-flex">
+        <a class="btn btn-outline-primary" href="/login">Login</a>
+        <a class="btn btn-outline-primary" href="/register">Register</a>
+        <a class="btn btn-primary" href="/files">View Files</a>
+      </div>
+    </div>
+  </nav>
+  <main>
+    <div>
+      <div class="wrapper">
+        <header>Store Files On The Cloud</header>
+        <form action="#">
+          <input class="file-input" type="file" name="file" hidden>
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p>Browse File to Upload</p>
+        </form>
+        <section class="progress-area"></section>
+        <section class="uploaded-area"></section>
+      </div>
+    </div>
+    <span class="snackbar" id="snackbar">Link copied to clipboard</span>
+    <span class="snackbar" id="file-error">File too large</span>
+  </main>
+</body>
+</html>
