@@ -244,31 +244,32 @@ document.body.addEventListener("drop", async (e) => {
 });
 
 document.querySelector(".d-flex > a:last-child").addEventListener("keydown", (e) => {
-  if (e.key === "Tab") {
+  if (e.shiftKey && e.key === "Tab") {
     e.preventDefault();
-    
-    if (e.shiftKey) {
-      document.querySelector(".d-flex > a").focus();
-      return;
-    }
-
-    const next_ele = document.querySelector("span.material-symbols-outlined.link");
-    if (next_ele) {
-      next_ele.focus();
-    } else {
-      document.querySelector("nav > div > a").focus(); 
-    }
+    document.querySelector(".d-flex > a:not(:first-child)").focus();
+    return;
   }
 });
 
 document.querySelector("nav > div > a").addEventListener("keydown", (e) => {
   if (e.shiftKey && e.key === "Tab") {
     e.preventDefault();
-    const next_ele = document.querySelector("span.material-symbols-outlined.link");
-    if (next_ele) {
-      next_ele.focus();
-    } else {
+    fileInput.parentElement.focus();
+  }
+});
+
+fileInput.parentElement.addEventListener('keydown', (e) => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    if (e.shiftKey) {
       document.querySelector(".d-flex > a:last-child").focus();
+    } else {
+      document.querySelector("nav > div > a").focus();
     }
   }
+});
+
+form.addEventListener("keypress", (event) => {
+  if (event.key === "Enter")
+    fileInput.click();
 });
