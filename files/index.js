@@ -56,7 +56,7 @@ function createTableRow(doc, num) {
   extension.innerText = doc.type;
   size.innerText = doc.size;
   date.innerText = doc.date.toDate().toLocaleString().replace(/,/g, "");
-  link.innerHTML = `<div class="link-col"><span class="material-symbols-outlined close" id="${copy_uuid}" tabindex="0">link</span><a href="${doc.url}" target="_blank">View</a><a href="#" data-url="${doc.url}" data-name="${doc.name}" id="${download_uuid}"><span class="material-symbols-outlined">file_download</span></div></a>`;
+  link.innerHTML = `<div class="link-col"><span class="material-symbols-outlined close" id="${copy_uuid}" tabindex="0">link</span><a href="${doc.url}" target="_blank">View</a><a href="#" data-url="${doc.url}" data-name="${doc.name}" id="${download_uuid}"><span class="material-symbols-outlined">file_download</span></a></div>`;
 
   row.appendChild(number);
   row.appendChild(name);
@@ -93,14 +93,18 @@ function populateTable(docs) {
     const { row, copy_uuid, download_uuid } = createTableRow(docs[i], i + 1);
     document.querySelector("tbody").appendChild(row);
 
-    document.getElementById(copy_uuid).addEventListener("click", () => {
-      navigator.clipboard.writeText(docs[i].url);
-      showSnackbar();
-    });
+    function copy_link(key) {
+      if (key === "Enter" || !key) {
+        navigator.clipboard.writeText(docs[i].url);
+        showSnackbar();
+      }
+    }
+
+    document.getElementById(copy_uuid).addEventListener("click", (e) => { copy_link(false) });
+    document.getElementById(copy_uuid).addEventListener("keypress", (e) => { copy_link(e.key) });
 
     document.getElementById(download_uuid).addEventListener("click", async () => {
       const url = "https://cors-anywhere.herokuapp.com/" + document.getElementById(download_uuid).getAttribute("data-url");
-      console.log(url)
       const filename = document.getElementById(download_uuid).getAttribute("data-name");
       const blob = await fetch(url, {
         method: 'GET',
@@ -113,14 +117,13 @@ function populateTable(docs) {
   }
 
   // tabbing
-  document.querySelector("tbody tr:last-child > td:last-child span").addEventListener("keydown", (e) => {
+  document.querySelector("tbody tr:last-child > td:last-child span:last-child").parentElement.addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
       e.preventDefault();
-      if (e.shiftKey) {
-        document.querySelector("tbody tr:last-child > td:last-child a").focus();
-        return;
-      } else {
+      if (!e.shiftKey) {
         document.querySelector("nav > div > a").focus();
+      } else {
+        document.querySelector("tbody tr:last-child > td:last-child a").focus();
       }
     }
   });
@@ -132,7 +135,7 @@ function populateTable(docs) {
 document.querySelector("nav > div > a").addEventListener("keydown", (e) => {
   if (e.key === "Tab" && e.shiftKey) {
     e.preventDefault();
-    document.querySelector("tbody tr:last-child > td:last-child span").focus();
+    document.querySelector("tbody tr:last-child > td:last-child span:last-child").parentElement.focus();
   }
 });
 
