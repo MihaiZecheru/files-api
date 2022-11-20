@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-app.js";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-storage.js";
-import { getFirestore, collection, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, Timestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -17,10 +17,23 @@ const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 const auth = getAuth();
 
-const form = document.querySelector("form"),
-fileInput = document.querySelector(".file-input"),
-progressArea = document.querySelector(".progress-area"),
-uploadedArea = document.querySelector(".uploaded-area");
+function formatBytes(bytes, decimals = 2) {
+  if (!+bytes) return '0 Bytes'
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+
+const MB = 1024 * 1024;
+const form = document.querySelector("form");
+const fileInput = document.querySelector(".file-input");
+const progressArea = document.querySelector(".progress-area");
+const uploadedArea = document.querySelector(".uploaded-area");
 
 function addFileInfoToFirestore(email, file, size, downloadURL) {
   const db = getFirestore();
@@ -32,6 +45,9 @@ function addFileInfoToFirestore(email, file, size, downloadURL) {
     type: file.name.substring(file.name.lastIndexOf(".") + 1),
     url: downloadURL,
     date: Timestamp.fromDate(new Date())
+  }).then((docRef) => {
+    // update doc with id
+    updateDoc(doc(db, email, docRef.id), { doc_id: docRef.id });
   });
 }
 
@@ -93,8 +109,10 @@ function generateUploadHTML(name, fileSize) {
           <span class="size">${fileSize}</span>
         </div>
       </div>
-      <span class="material-symbols-outlined link ${uuid}" tabindex="0">link</span>
-      <i class="fas fa-check"></i>
+      <div class="action-group">
+        <span class="material-symbols-outlined link ${uuid}" tabindex="0">link</span>
+        <i class="fas fa-check" style="margin-left: .75rem"></i>
+      </div>
     </li>`
   };
 }
@@ -111,18 +129,25 @@ function addCopyLinkEventListener(uuid, filename, downloadURL) {
   const copylink_button = elements[1];
   const viewfullname_button = elements[0];
   viewfullname_button.title = filename;
-  copylink_button.addEventListener("click", () => {
+  
+  function copy() {
     navigator.clipboard.writeText(downloadURL).then(() => {
       showSnackBar();
     });
+  }
+
+  copylink_button.addEventListener("click", copy);
+  copylink_button.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      copy();
+    }
   });
+
   const copylink_buttons = document.querySelectorAll("span.material-symbols-outlined.link");
   copylink_buttons[copylink_buttons.length - 1].addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
-      e.preventDefault();
-      if (e.shiftKey) {
-        document.querySelector(".d-flex > a:last-child").focus();
-      } else {
+      if (!e.shiftKey) {
+        e.preventDefault();
         document.querySelector("nav > div > a").focus();
       }
     }
@@ -144,7 +169,7 @@ fileInput.onchange = async ({ target }) => {
     }
 
     // only allow files less than 50MB
-    if (file.size > 50000000) {
+    if (file.size > (50 * MB)) {
       showFileError();
     } else {
       await uploadFile(fileName, file);
@@ -174,19 +199,11 @@ async function uploadFile(shortened_filename, file) {
     updateProgress(0, true);
     console.log(`ERROR: ${error.message}`);
     uploadedArea.classList.remove("onprogress");
-  }, async () => {
+  }, async (a) => {
     // done uploading
     progressArea.innerHTML = "";
     
-    let fileTotal = Math.floor(total_file_size / 1000);
-    let fileSize;
-    
-    if (fileTotal < 1024) {
-      fileSize = fileTotal + " KB";
-    } else {
-      fileSize = (loaded_file_size / (1024 * 1024)).toFixed(2) + " MB";
-    }
-
+    const fileSize = formatBytes(total_file_size);
     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
     if (auth.currentUser) {
@@ -236,7 +253,7 @@ document.body.addEventListener("drop", async (e) => {
   }
   
   // only allow files less than 50MB
-  if (file.size > 50000000) {
+  if (file.size > (50 * MB)) {
     showFileError();
   } else {
     await uploadFile(fileName, file);
@@ -254,7 +271,12 @@ document.querySelector(".d-flex > a:last-child").addEventListener("keydown", (e)
 document.querySelector("nav > div > a").addEventListener("keydown", (e) => {
   if (e.shiftKey && e.key === "Tab") {
     e.preventDefault();
-    fileInput.parentElement.focus();
+    if (document.querySelector("span.material-symbols-outlined.link")) {
+      const link_elements = document.querySelectorAll("span.material-symbols-outlined.link");
+      link_elements[link_elements.length - 1].focus();
+    } else {
+      fileInput.parentElement.focus();
+    }
   }
 });
 
@@ -264,7 +286,11 @@ fileInput.parentElement.addEventListener('keydown', (e) => {
     if (e.shiftKey) {
       document.querySelector(".d-flex > a:last-child").focus();
     } else {
-      document.querySelector("nav > div > a").focus();
+      if (document.querySelector("span.material-symbols-outlined.link")) {
+        document.querySelector("span.material-symbols-outlined.link").focus();
+      } else {
+        document.querySelector("nav > div > a").focus();
+      }
     }
   }
 });
