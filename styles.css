@@ -339,3 +339,9 @@ nav > div > div > a:last-child:hover {
 body {
   overflow: hidden;
 }
+
+.action-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
