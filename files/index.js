@@ -3,6 +3,12 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-auth
 import { getFirestore, collection, query, orderBy, limit, getDocs, deleteDoc, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-firestore.js";
 import { ref, deleteObject, getStorage } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-storage.js";
 
+const urlParams = new URLSearchParams(window.location.search);
+const _mode = urlParams.get("mode");
+if (_mode === "d") {
+  window.history.replaceState({}, document.title, "/files");
+}
+
 const firebaseConfig = {
   apiKey: "AIzaSyDQbDmNR165Y9tzAlLfInNSKYv8a9OTLTM",
   authDomain: "files-api-cce3d.firebaseapp.com",
@@ -37,6 +43,9 @@ function showSnackbar() {
 function finishLoading() {
   document.getElementById("loading").style.display = "none";
   document.querySelector("table").style.display = "table";
+  if (_mode === "d") {
+    document.getElementById("delete-files").click();
+  }
 }
 
 function createTableRow(doc, num) {
@@ -332,6 +341,7 @@ document.getElementById("delete-button").addEventListener("click", async () => {
 
     // delete from storage
     await deleteObject(ref(getStorage(), filename));
+    window.location.href = window.location.href + "?mode=d";
   });
 });
 
@@ -382,7 +392,7 @@ document.body.addEventListener("keydown", (e) => {
     e.preventDefault();
     document.getElementById("delete-files").click();
   }
-  console.log(e.target)
+
   if (e.target.tagName === "INPUT" && e.target.type === "checkbox" && e.key === "Enter") {
     e.preventDefault();
     e.target.click();
