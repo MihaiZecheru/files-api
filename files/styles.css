@@ -109,3 +109,28 @@ body {
   top: calc(50% - 5em);
   left: calc(50% - 5em);
 }
+
+#manipulate-files-icons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  padding: .5rem;
+  margin-left: .5rem;
+}
+
+.manipulate-files {
+  transform: scale(1.5);
+  margin-right: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.manipulate-files:last-child {
+  color: red;
+}
+
+/* highlight yellow color */
+mark {
+  background-color: #FFD600;
+  color: #000;
+}
