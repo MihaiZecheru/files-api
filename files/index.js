@@ -110,7 +110,7 @@ function populateTable(docs) {
 
     function copy_link(key) {
       if (key === "Enter" || !key) {
-        navigator.clipboard.writeText(docs[i].url);
+        navigator.clipboard.writeText(docs[i].short_url);
         showSnackbar();
       }
     }
