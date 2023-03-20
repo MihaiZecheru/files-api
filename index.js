@@ -17,6 +17,18 @@ const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 const auth = getAuth();
 
+// change login button based on auth
+setTimeout(() => {
+  if (auth.currentUser) {
+    const btn = document.getElementById("login");
+    btn.innerText = "Logout";
+    btn.onclick = () => {
+      auth.signOut();
+      window.location.href = "/login";
+    };
+  }  
+}, 500);
+
 function formatBytes(bytes, decimals = 2) {
   if (!+bytes) return '0 Bytes'
 
@@ -29,28 +41,6 @@ function formatBytes(bytes, decimals = 2) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
-const MB = 1024 * 1024;
-const form = document.querySelector("form");
-const fileInput = document.querySelector(".file-input");
-const progressArea = document.querySelector(".progress-area");
-const uploadedArea = document.querySelector(".uploaded-area");
-
-function addFileInfoToFirestore(email, file, size, downloadURL) {
-  const db = getFirestore();
-  const collectionsRef = collection(db, email);
-  addDoc(collectionsRef, {
-    email,
-    name: file.name,
-    size: size,
-    type: file.name.substring(file.name.lastIndexOf(".") + 1),
-    url: downloadURL,
-    date: Timestamp.fromDate(new Date())
-  }).then((docRef) => {
-    // update doc with id
-    updateDoc(doc(db, email, docRef.id), { doc_id: docRef.id });
-  });
-}
-
 function uuid4() {
   let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -60,7 +50,46 @@ function uuid4() {
   if (uuid[0] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']) {
     uuid = "a" + uuid.slice(1);
   }
-  return;
+  return uuid;
+}
+
+const MB = 1024 * 1024;
+const form = document.querySelector("form");
+const fileInput = document.querySelector(".file-input");
+const progressArea = document.querySelector(".progress-area");
+const uploadedArea = document.querySelector(".uploaded-area");
+
+async function create_short_url(url, doc_id) {
+  return await fetch(`https://cors-anywhere.herokuapp.com/https://beb.mzecheru.com/url?custom=${doc_id}`, {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "Content-Type": "application/json",
+      "origin": "https://files.mzecheru.com"
+    },
+    body: JSON.stringify({ target_url: url })
+  }).then((res) => res.json()).then((data) => data.url);
+}
+
+async function addFileInfoToFirestore(email, file, size, downloadURL) {
+  const db = getFirestore();
+  const collectionsRef = collection(db, email);
+  
+  const docRef = await addDoc(collectionsRef, {
+    email,
+    name: file.name,
+    size: size,
+    type: file.name.substring(file.name.lastIndexOf(".") + 1),
+    url: downloadURL,
+    date: Timestamp.fromDate(new Date())
+  });
+  
+  const short_url = await create_short_url(downloadURL, docRef.id);
+  
+  // update doc with id
+  updateDoc(doc(db, email, docRef.id), { doc_id: docRef.id, short_url: short_url });
+  
+  return short_url;
 }
 
 function showSnackBar() {
@@ -205,15 +234,18 @@ async function uploadFile(shortened_filename, file) {
     
     const fileSize = formatBytes(total_file_size);
     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+    let short_url;
 
     if (auth.currentUser) {
-      addFileInfoToFirestore(auth.currentUser.email, file, fileSize, downloadURL);
+      short_url = await addFileInfoToFirestore(auth.currentUser.email, file, fileSize, downloadURL);
+    } else {
+      short_url = await create_short_url(downloadURL, uuid4());
     }
 
     let { uploadedHTML, uuid } = generateUploadHTML(shortened_filename, fileSize);
     uploadedArea.classList.remove("onprogress");
     uploadedArea.insertAdjacentHTML("afterbegin", uploadedHTML);
-    addCopyLinkEventListener(uuid, file.name, downloadURL);
+    addCopyLinkEventListener(uuid, file.name, short_url);
   });
 }
 
