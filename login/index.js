@@ -10,8 +10,20 @@ const firebaseConfig = {
   appId: "1:782315339115:web:fff416cd09641ea91c202e"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+
+// change login button based on auth
+setTimeout(() => {
+  if (auth.currentUser) {
+    const btn = document.getElementById("login-header");
+    btn.innerText = "Logout";
+    btn.onclick = () => {
+      auth.signOut();
+      window.location.reload();
+    };
+  }  
+}, 500);
 
 const email_box = document.getElementById('email');
 const password_box = document.getElementById('password');
@@ -35,7 +47,6 @@ login_button.addEventListener('click', (e) => {
     return;
   }
 
-  const auth = getAuth();
   signInWithEmailAndPassword(auth, email, password).then(() => {
     window.location.href = '/files';
   }).catch((error) => {
